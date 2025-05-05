@@ -2,20 +2,29 @@
 import { useState, useEffect } from 'react';
 import { Email } from '@/utils/mockData';
 import { emailService } from '@/services/emailService';
-import ConnectGmailModal from '@/components/ConnectGmailModal';
+import ConnectEmailModal from '@/components/ConnectEmailModal';
 import EmailAnalysis from '@/components/EmailAnalysis';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Mail } from 'lucide-react';
+import { Mail, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [emails, setEmails] = useState<Email[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [user, setUser] = useState<any>(null);
   
   useEffect(() => {
+    // Get user from localStorage
+    const userJson = localStorage.getItem('user');
+    if (userJson) {
+      setUser(JSON.parse(userJson));
+    }
+    
     const fetchInitialEmails = async () => {
       setIsLoading(true);
       try {
@@ -43,6 +52,15 @@ const Index = () => {
     setIsConnected(true);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully"
+    });
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b shadow-sm">
@@ -52,12 +70,23 @@ const Index = () => {
             <h1 className="text-2xl font-bold">Inbox Shield</h1>
           </div>
           
-          <Button
-            onClick={handleConnect}
-            variant={isConnected ? "secondary" : "default"}
-          >
-            {isConnected ? 'Connected to Gmail' : 'Connect Gmail'}
-          </Button>
+          <div className="flex items-center space-x-4">
+            {user && (
+              <span className="hidden md:inline text-sm text-muted-foreground">
+                {user.email}
+              </span>
+            )}
+            <Button
+              onClick={handleConnect}
+              variant={isConnected ? "secondary" : "default"}
+            >
+              {isConnected ? 'Email Connected' : 'Connect Email'}
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Log out
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -83,7 +112,7 @@ const Index = () => {
         </div>
       </footer>
 
-      <ConnectGmailModal 
+      <ConnectEmailModal
         isOpen={showConnectModal}
         onClose={() => setShowConnectModal(false)}
         onSuccess={handleConnectSuccess}
